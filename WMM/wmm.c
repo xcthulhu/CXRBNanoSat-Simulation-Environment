@@ -46,8 +46,8 @@ readdate (char *dateb, WMMtype_MagneticModel *MagneticModel, WMMtype_Date *Magne
   char Error_Message[255];
   sscanf (dateb, "%d/%d/%d", &MagneticDate->Year, &MagneticDate->Month,
 	  &MagneticDate->Day);
-  if(MagneticDate->Year < 2010) {
-    fprintf(stderr,"This software only supports times after 2010/01/01\n");
+  if(2010 < MagneticDate->Year && MagneticDate->Year < 2015) {
+    fprintf(stderr,"This software only supports times after 2010/01/01 and before 2015/01/01\n");
     return 0;
   }
   if (!(WMM_DateToYear (MagneticDate, Error_Message)))
@@ -98,7 +98,7 @@ main (int argc, char *argv[])
   if (!(argc == 5 && 
 	readpos(argv[1],argv[2],argv[3], &CoordGeodetic, &Geoid) && 
 	readdate(argv[4], MagneticModel, &UserDate))) {
-    fprintf(stderr,"Usage:\n"
+    fprintf(stderr,"\nUsage:\n"
 	    "%s <lattidue> <longitude> <altitude> YYYY/MM/DD\n"
 	    "lattitude and longitude are given in (signed) degrees\n"
 	    "altitude is given in kilometers\n", argv[0]);
