@@ -46,16 +46,20 @@ readdate (char *dateb, WMMtype_MagneticModel *MagneticModel, WMMtype_Date *Magne
   char Error_Message[255];
   sscanf (dateb, "%d/%d/%d", &MagneticDate->Year, &MagneticDate->Month,
 	  &MagneticDate->Day);
+  if(MagneticDate->Year < 2010) {
+    fprintf(stderr,"This software only supports times after 2010/01/01\n");
+    return 0;
+  }
   if (!(WMM_DateToYear (MagneticDate, Error_Message)))
     {
-      perror (Error_Message);
-      perror ("Time must be specified in YYYY/MM/DD");
+      fprintf(stderr,"%s\n",Error_Message);
+      fprintf(stderr,"Time must be specified in YYYY/MM/DD\n");
       return 0;
     }
   if(MagneticDate->DecimalYear > MagneticModel->epoch + 5 || MagneticDate->DecimalYear < MagneticModel->epoch) {
     switch(WMM_Warnings(4, MagneticDate->DecimalYear, MagneticModel)) {
     case 0: return 0;
-    case 1: perror ("Time must be specified in YYYY/MM/DD");
+    case 1: fprintf(stderr,"Time must be specified in YYYY/MM/DD\n");
       return 0;
     default: break;
     }
@@ -74,7 +78,6 @@ main (int argc, char *argv[])
   WMMtype_Date UserDate;
   WMMtype_GeoMagneticElements GeoMagneticElements;
   WMMtype_Geoid Geoid;
-  char err[256];
   char filename[] = "WMM.COF";
   int NumTerms;
 
@@ -95,11 +98,10 @@ main (int argc, char *argv[])
   if (!(argc == 5 && 
 	readpos(argv[1],argv[2],argv[3], &CoordGeodetic, &Geoid) && 
 	readdate(argv[4], MagneticModel, &UserDate))) {
-    sprintf(err,"Usage:\n"
+    fprintf(stderr,"Usage:\n"
 	    "%s <lattidue> <longitude> <altitude> YYYY/MM/DD\n"
 	    "lattitude and longitude are given in (signed) degrees\n"
 	    "altitude is given in kilometers\n", argv[0]);
-    perror(err);
     exit(EXIT_FAILURE);
   }
 
