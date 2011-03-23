@@ -6,7 +6,7 @@
 #include <stdlib.h>
 
 #include "WMMHeader.h"
-#include "WMM_SubLibrary.c"
+//#include "WMM_SubLibrary.c"
 
 //---------------------------------------------------------------------------
 
