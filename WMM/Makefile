@@ -9,31 +9,38 @@ LIBFLAGS = -static
 LIBNAME = libwmm
 
 # Executable name
-BINNAME = wmm_point
+BINARIES = wmm_point wmm
 
 LIBSRCFILES = WMM_SubLibrary.c
 LIBOBJFILES = ${LIBSRCFILES:.c=.o}
 
-BINSRCFILES = wmm_point.c
-BINOBJFILES = ${BINSRCFILES:.c=.o}
+all: ${BINARIES}
 
-all: bin
+#lib: ${LIBNAME}.a ${LIBNAME}.so
+#	ar rcs ${LIBNAME}.a ${LIBOBJFILES}
+#	${CC} -shared -Wl,-soname,${LIBNAME}.so.1 -o ${LIBNAME}.so ${LIBOBJFILES}
 
-lib: ${LIBNAME}.a ${LIBNAME}.so
-	ar rcs ${LIBNAME}.a ${LIBOBJFILES}
-	${CC} -shared -Wl,-soname,${LIBNAME}.so.1 -o ${LIBNAME}.so ${LIBOBJFILES}
+%.la : %.lo
+	libtool --mode=link ${CC} ${CFLAGS} -o $@ $<
+
+%.lo: %.c
+	libtool --mode=compile ${CC} ${CFLAGS} -c -o $@ $<
 
 %.o: %.c
-	${CC} ${CFLAGS} -c -o $@ $<
+	libtool --mode=compile ${CC} ${CFLAGS} -c -o $@ $<
 
-${LIBNAME}.a: ${LIBOBJFILES}
-	ar rcs ${LIBNAME}.a ${LIBOBJFILES}
+#${LIBNAME}.a: ${LIBOBJFILES}
+#	ar rcs ${LIBNAME}.a ${LIBOBJFILES}
 
-${LIBNAME}.so: ${LIBOBJFILES}
-	${CC} -shared -Wl,-soname,${LIBNAME}.so.1 -o ${LIBNAME}.so ${LIBOBJFILES}
+#${LIBNAME}.so: ${LIBOBJFILES}
+#	${CC} -shared -Wl,-soname,${LIBNAME}.so.1 -o ${LIBNAME}.so ${LIBOBJFILES}
+
+wmm_point: wmm_point.o libwmm.la
+	libtool --mode=link ${CC} -o $@ $< libwmm.la ${LDFLAGS}
+
+wmm: wmm.o libwmm.la
+	libtool --mode=link ${CC} -o $@ $< libwmm.la ${LDFLAGS}
 
 clean:
-	rm -f *.o ${LIBNAME}.* *.exe wmm_point wmm_point_ISO
+	rm -fr *.o .libs *.lo *.la *.o *.exe ${BINARIES}
 
-bin: lib ${BINOBJFILES}
-	${CC} -o ${BINNAME} ${BINOBJFILES} ${LIBNAME}.a ${LDFLAGS}
