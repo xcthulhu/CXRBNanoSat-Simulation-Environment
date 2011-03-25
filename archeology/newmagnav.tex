@@ -20,8 +20,9 @@
 \newtheorem{corollary}[theorem]{Corollary}
 \newtheorem{definition}{Definition}
 
-\title{Usage of George Clark's "newmagnav"}
+\title{Usage of George Clark's ``newmagnav"}
 \author{John P. Doty}
+\date{}
 \begin{document}
 \maketitle
 
@@ -30,7 +31,7 @@ This a one of the cruder versions of George Clark's series of ``magnetic sailing
 Ok, we start by launching the program:
 \begin{alltt}
 \bfseries
-[Hikyuu:SAS3/CXRBNanoSat-Simulation-Environment/archeology] jpd% ./newmagnav
+> ./newmagnav
       tstart (days)?
 \end{alltt}   
 It's asking us for the start time of the maneuver relative to the SAS-3 scheduled launch in 1975. Just enter a positive number:
@@ -53,7 +54,7 @@ Now it wants right ascension and declination for the Z axis (which is the wheel 
 262,-20
 \end{alltt}
 
-So now, let's think about the plan. I'm going to assume here that I actually want the Z axis to point at 262,-24, so I want to push declination down by four degrees without changing right ascension. For this first run, I'm just going to explore how the "wind" is "blowing" to plan my tack.
+So now, let's think about the plan. I'm going to assume here that I actually want the Z axis to point at 262,-24, so I want to push declination down by four degrees without changing right ascension. For this first run, I'm just going to explore how the ``wind" is ``blowing" to plan my tack.
 \begin{alltt}
 \bfseries
       duration of torque (seconds)?
@@ -103,7 +104,7 @@ What this shows is that while around this time, a positive dipole leads to a neg
 \bfseries
       zra,zdec? (if no change type 0,0)
 ^C
-[Hikyuu:SAS3/CXRBNanoSat-Simulation-Environment/archeology] jpd% ./newmagnav
+> ./newmagnav
       tstart (days)?
 1.18
       wheel rate in rpm (enter with + or - according to sign of dipole)
@@ -124,9 +125,9 @@ What this shows is that while around this time, a positive dipole leads to a neg
 This got us to a better declination. Now, if we turn the dipole to positive, we can get the right ascension back to where we started, while pushing the declination still more negative. That's because we're starting this second torque later, and as we saw, the declination component of the precession switches sign at later times here.
 \begin{alltt}
 \bfseries
-       zra,zdec? (if no change type 0,0)
+      zra,zdec? (if no change type 0,0)
 ^C
-[Hikyuu:SAS3/CXRBNanoSat-Simulation-Environment/archeology] jpd% ./newmagnav
+> ./newmagnav
       tstart (days)?
 1.18347
       wheel rate in rpm (enter with + or - according to sign of dipole)
