@@ -8,4 +8,4 @@ newmagnav : $(OBJ)
 	$(FC) $(OBJ) -o newmagnav
 
 clean :
-	rm -f $(OBJ) newmagnav a.out
+	rm -f $(OBJ) newmagnav a.out *.aux *.log newmagnav.pdf

@@ -1,0 +1,169 @@
+\documentclass[11pt]{article}
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+\usepackage{alltt}
+\renewcommand{\ttdefault}{txtt} 
+
+\textwidth = 6.5 in
+\textheight = 9 in
+\oddsidemargin = 0.0 in
+\evensidemargin = 0.0 in
+\topmargin = 0.0 in
+\headheight = 0.0 in
+\headsep = 0.0 in
+\parskip = 0.2in
+\parindent = 0.0in
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}{Definition}
+
+\title{Usage of George Clark's "newmagnav"}
+\author{John P. Doty}
+\begin{document}
+\maketitle
+
+This a one of the cruder versions of George Clark's series of ``magnetic sailing'' programs for SAS-3. It's purpose was to allow the duty operator to control the Z-axis pointing direction of the spacecraft by torqued precession using the earth's magnetic field and a single torque coil. Ground commands could control the sign of the magnetic dipole moment of the coil and could switch it on or off, but there was no control of the magnitude of the dipole moment.
+
+Ok, we start by launching the program:
+\begin{alltt}
+\bfseries
+[Hikyuu:SAS3/CXRBNanoSat-Simulation-Environment/archeology] jpd% ./newmagnav
+      tstart (days)?
+\end{alltt}   
+It's asking us for the start time of the maneuver relative to the SAS-3 scheduled launch in 1975. Just enter a positive number:
+\begin{alltt}
+\bfseries
+1.18
+      wheel rate in rpm (enter with + or - according to sign of dipole)
+\end{alltt}
+
+Now it wants the wheel spin rate so it can calculate the angular momentum. It assumes the angular momentum in the rotation of the spacecraft is negligible. And there's a trick: you use a negative sign here to indicate a negative dipole magnitude for the Z torque coil.
+\begin{alltt}
+\bfseries
+
+1555
+      zra,zdec? (if no change type 0,0)
+\end{alltt}
+Now it wants right ascension and declination for the Z axis (which is the wheel axis).
+\begin{alltt}
+\bfseries
+262,-20
+\end{alltt}
+
+So now, let's think about the plan. I'm going to assume here that I actually want the Z axis to point at 262,-24, so I want to push declination down by four degrees without changing right ascension. For this first run, I'm just going to explore how the "wind" is "blowing" to plan my tack.
+\begin{alltt}
+\bfseries
+      duration of torque (seconds)?
+200
+ start=     1.18000
+ stop=     1.18236
+ zra1= 262.00
+ zdec1= -20.00
+ zra2= 258.26
+ zdec2= -18.78
+ dra=  -3.74
+ ddec=   1.22
+\end{alltt}
+So, here we moved right ascension by -3.74 degrees, and declination by 1.22 degrees in 200 seconds of torquing. That's the wrong way in declination, but we're just exploring here. Try longer torques:
+\begin{alltt}
+\bfseries
+  
+      zra,zdec? (if no change type 0,0)
+0,0
+      duration of torque (seconds)?
+400
+ start=     1.18000
+ stop=     1.18466
+ zra1= 262.00
+ zdec1= -20.00
+ zra2= 254.47
+ zdec2= -19.43
+ dra=  -7.53
+ ddec=   0.57
+
+
+      zra,zdec? (if no change type 0,0)
+0,0
+      duration of torque (seconds)?
+600
+ start=     1.18000
+ stop=     1.18695
+ zra1= 262.00
+ zdec1= -20.00
+ zra2= 251.15
+ zdec2= -21.35
+ dra= -10.85
+ ddec=  -1.35
+\end{alltt}
+What this shows is that while around this time, a positive dipole leads to a negative change of right ascension of $\sim$2 degrees per 100 seconds, the declination change is positive for short torques, but negative for long ones. From that, we can see that if we first use a negative dipole, and later use a positive dipole, the right ascension changes will tend to cancel, while the positive ones will add up. Therefore, we quit and restart the program using a negative wheel rate to indicate that we're starting with a negative dipole. A quick estimate suggests that 300 seconds will likely be a good duration for the first torque.
+\begin{alltt}
+\bfseries
+      zra,zdec? (if no change type 0,0)
+^C
+[Hikyuu:SAS3/CXRBNanoSat-Simulation-Environment/archeology] jpd% ./newmagnav
+      tstart (days)?
+1.18
+      wheel rate in rpm (enter with + or - according to sign of dipole)
+-1555
+      zra,zdec? (if no change type 0,0)
+262,-20
+      duration of torque (seconds)?
+300
+ start=     1.18000
+ stop=     1.18347
+ zra1= 262.00
+ zdec1= -20.00
+ zra2= 267.68
+ zdec2= -21.03
+ dra=   5.68
+ ddec=  -1.03
+\end{alltt}
+This got us to a better declination. Now, if we turn the dipole to positive, we can get the right ascension back to where we started, while pushing the declination still more negative. That's because we're starting this second torque later, and as we saw, the declination component of the precession switches sign at later times here.
+\begin{alltt}
+\bfseries
+       zra,zdec? (if no change type 0,0)
+^C
+[Hikyuu:SAS3/CXRBNanoSat-Simulation-Environment/archeology] jpd% ./newmagnav
+      tstart (days)?
+1.18347
+      wheel rate in rpm (enter with + or - according to sign of dipole)
+1555
+      zra,zdec? (if no change type 0,0)
+267.68,-21.03
+      duration of torque (seconds)?
+300
+ start=     1.18347
+ stop=     1.18694
+ zra1= 267.68
+ zdec1= -21.03
+ zra2= 262.61
+ zdec2= -23.86
+ dra=  -5.07
+ ddec=  -2.83
+\end{alltt}
+
+Pretty good, just a little short of the target. Go a little longer.
+
+\begin{alltt}
+\bfseries
+      zra,zdec? (if no change type 0,0)
+0,0
+      duration of torque (seconds)?
+330
+ start=     1.18347
+ stop=     1.18729
+ zra1= 267.68
+ zdec1= -21.03
+ zra2= 262.19
+ zdec2= -24.26
+ dra=  -5.49
+ ddec=  -3.23
+\end{alltt}
+
+Here we've overshot our declination target by 0.26 degrees, but come up short in right ascension by 0.19 degrees. In practice, a SAS-3 duty operator would have stopped here. Although with further adjustments of the torque schedule you could make the simulation hit the target better, the spacecraft probably wouldn't cooperate at this level.
+
+
+ \end{document} 
