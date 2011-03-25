@@ -4,7 +4,7 @@
 #include <string.h>
 #include <math.h>
 #include <stdlib.h>
-
+#include <sys/stat.h>
 #include "WMMHeader.h"
 
 //---------------------------------------------------------------------------
@@ -29,6 +29,13 @@ Nov 23, 2009
 */
 
 int
+file_exists (char *fileName)
+{
+  struct stat buf;
+  return !stat (fileName, &buf);
+}
+
+int
 readpos (char *latb, char *lonb, char *altb,
 	 WMMtype_CoordGeodetic * CoordGeodetic, WMMtype_Geoid * Geoid)
 {
@@ -41,26 +48,54 @@ readpos (char *latb, char *lonb, char *altb,
 }
 
 int
-readdate (char *dateb, WMMtype_MagneticModel *MagneticModel, WMMtype_Date *MagneticDate)
+readdate (char *dateb, WMMtype_MagneticModel * MagneticModel,
+	  WMMtype_Date * MagneticDate)
 {
   char Error_Message[255];
   sscanf (dateb, "%d/%d/%d", &MagneticDate->Year, &MagneticDate->Month,
 	  &MagneticDate->Day);
+  if (!(2010 < MagneticDate->Year && MagneticDate->Year < 2015))
+    {
+      fprintf (stderr,
+	       "This software only supports times after 2010/01/01 and before 2015/01/01\n");
+      return 0;
+    }
   if (!(WMM_DateToYear (MagneticDate, Error_Message)))
     {
-      perror (Error_Message);
-      perror ("Time must be specified in YYYY/MM/DD");
+      fprintf (stderr, "%s\n", Error_Message);
+      fprintf (stderr, "Time must be specified in YYYY/MM/DD\n");
       return 0;
     }
-  if(MagneticDate->DecimalYear > MagneticModel->epoch + 5 || MagneticDate->DecimalYear < MagneticModel->epoch) {
-    switch(WMM_Warnings(4, MagneticDate->DecimalYear, MagneticModel)) {
-    case 0: return 0;
-    case 1: perror ("Time must be specified in YYYY/MM/DD");
-      return 0;
-    default: break;
+  if (MagneticDate->DecimalYear > MagneticModel->epoch + 5
+      || MagneticDate->DecimalYear < MagneticModel->epoch)
+    {
+      switch (WMM_Warnings (4, MagneticDate->DecimalYear, MagneticModel))
+	{
+	case 0:
+	  return 0;
+	case 1:
+	  fprintf (stderr, "Time must be specified in YYYY/MM/DD\n");
+	  return 0;
+	default:
+	  break;
+	}
     }
-  }
   return 1;
+}
+
+void
+print_usage (char *progname)
+{
+  fprintf (stderr, "\nUsage:\n"
+	   "%s <WMM.COF> <lattidue> <longitude> <altitude> YYYY/MM/DD\n"
+	   "- WMM.COF is a file containing world magnetic model spherical harmonic coefficients\n"
+	   "- lattitude and longitude are given in (signed) degrees\n"
+	   "- altitude is given in kilometers\n"
+	   "\n"
+	   "OUTPUTS: X, Y, and Z components of geomagnetic field vector, seperated by spaces\n"
+	   "- X is the northerly intensity\n"
+	   "- Y is the easterly intensity\n"
+	   "- Z is the verticle intensity, positive downwards\n", progname);
 }
 
 int
@@ -74,8 +109,6 @@ main (int argc, char *argv[])
   WMMtype_Date UserDate;
   WMMtype_GeoMagneticElements GeoMagneticElements;
   WMMtype_Geoid Geoid;
-  char err[256];
-  char filename[] = "WMM.COF";
   int NumTerms;
 
   /*** Memory allocation ***/
@@ -87,31 +120,37 @@ main (int argc, char *argv[])
   WMM_SetDefaults (&Ellip, MagneticModel, &Geoid);	/* Set default values and constants */
   /* Check for Geographic Poles */
   //WMM_readMagneticModel_Large(filename, MagneticModel); //Uncomment this line when using the 740 model, and comment out the  WMM_readMagneticModel line.
-  WMM_readMagneticModel (filename, MagneticModel);
+  if (!file_exists (argv[1]))
+    {
+      fprintf (stderr, "File %s does not exist\n", argv[1]);
+      print_usage (argv[0]);
+      exit (EXIT_FAILURE);
+    }
+
+  WMM_readMagneticModel (argv[1], MagneticModel);
   WMM_InitializeGeoid (&Geoid);	/* Read the Geoid file */
-  //WMM_GeomagIntroduction (MagneticModel);	/* Print out the WMM introduction */
+  //WMM_GeomagIntroduction (MagneticModel);     /* Print out the WMM introduction */
 
   /*** Get parameters from command line ***/
-  if (!(argc == 5 && 
-	readpos(argv[1],argv[2],argv[3], &CoordGeodetic, &Geoid) && 
-	readdate(argv[4], MagneticModel, &UserDate))) {
-    sprintf(err,"Usage:\n"
-	    "%s <lattidue> <longitude> <altitude> YYYY/MM/DD\n"
-	    "lattitude and longitude are given in (signed) degrees\n"
-	    "altitude is given in kilometers\n", argv[0]);
-    perror(err);
-    exit(EXIT_FAILURE);
-  }
+  if (!(argc == 6 &&
+	readpos (argv[2], argv[3], argv[4], &CoordGeodetic, &Geoid) &&
+	readdate (argv[5], MagneticModel, &UserDate)))
+    {
+      print_usage (argv[0]);
+      exit (EXIT_FAILURE);
+    }
 
   /*** Perform Calculations ***/
-  WMM_GeodeticToSpherical (Ellip, CoordGeodetic, &CoordSpherical); /*Convert from geodeitic to Spherical Equations: 17-18, WMM Technical report */
-  WMM_TimelyModifyMagneticModel (UserDate, MagneticModel, TimedMagneticModel); /* Time adjust the coefficients, Equation 19, WMM Technical report */
-  WMM_Geomag (Ellip, CoordSpherical, CoordGeodetic, TimedMagneticModel, &GeoMagneticElements); /* Computes the geoMagnetic field elements and their time change */
+  WMM_GeodeticToSpherical (Ellip, CoordGeodetic, &CoordSpherical);	/*Convert from geodeitic to Spherical Equations: 17-18, WMM Technical report */
+  WMM_TimelyModifyMagneticModel (UserDate, MagneticModel, TimedMagneticModel);	/* Time adjust the coefficients, Equation 19, WMM Technical report */
+  WMM_Geomag (Ellip, CoordSpherical, CoordGeodetic, TimedMagneticModel, &GeoMagneticElements);	/* Computes the geoMagnetic field elements and their time change */
   WMM_CalculateGridVariation (CoordGeodetic, &GeoMagneticElements);
 
   /*** Output ***/
-  WMM_PrintUserData (GeoMagneticElements, CoordGeodetic, UserDate, TimedMagneticModel, &Geoid);	/* Print the results */
-
+  //WMM_PrintUserData (GeoMagneticElements, CoordGeodetic, UserDate, TimedMagneticModel, &Geoid);       /* Print the results */
+  // Print the three Geogmagnetic elements
+  printf ("%-9.1lf %-9.1lf %-9.1lf\n", GeoMagneticElements.X,
+	  GeoMagneticElements.Y, GeoMagneticElements.Z);
 
   /*** Memory Cleanup ***/
   WMM_FreeMagneticModelMemory (MagneticModel);
@@ -123,5 +162,5 @@ main (int argc, char *argv[])
       Geoid.GeoidHeightBuffer = NULL;
     }
 
-  exit(EXIT_SUCCESS);
+  exit (EXIT_SUCCESS);
 }
