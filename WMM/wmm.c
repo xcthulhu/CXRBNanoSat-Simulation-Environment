@@ -137,19 +137,21 @@ read_date (char *dateb, WMMtype_Date * MagneticDate)
     return 1;
 }
 
+/***** Usage Warning *****/
+
 void
 print_usage (char *progname)
 {
   fprintf (stderr, "\nUsage:\n"
-	   "%s <WMM.COF> <lattidue> <longitude> <altitude> YYYY/MM/DD\n"
-	   "- WMM.COF is a file containing world magnetic model spherical harmonic coefficients\n"
+	   "%s <lattidue> <longitude> <altitude> YYYY/MM/DD\n"
+	   // "- WMM.COF is a file containing world magnetic model spherical harmonic coefficients\n"
 	   "- lattitude and longitude are given in (signed) degrees\n"
 	   "- altitude is given in kilometers\n"
 	   "\n"
 	   "OUTPUTS: X, Y, and Z components of geomagnetic field vector, seperated by spaces\n"
-	   "- X is the northerly intensity\n"
-	   "- Y is the easterly intensity\n"
-	   "- Z is the verticle intensity, positive downwards\n", progname);
+	   "- X is the northerly intensity in nanoteslas\n"
+	   "- Y is the easterly intensity in nanoteslas\n"
+	   "- Z is the verticle intensity, positive downwards in nanoteslas\n", progname);
 }
 
 int
@@ -164,6 +166,7 @@ main (int argc, char *argv[])
   WMMtype_GeoMagneticElements GeoMagneticElements;
   WMMtype_Geoid Geoid;
   int NumTerms;
+  char filename[] = "WMM.COF";
 
   /*** Memory allocation ***/
   NumTerms = ((WMM_MAX_MODEL_DEGREES + 1) * (WMM_MAX_MODEL_DEGREES + 2) / 2);	/* WMM_MAX_MODEL_DEGREES is defined in WMM_Header.h */
@@ -173,22 +176,22 @@ main (int argc, char *argv[])
     WMM_Error (2);
   WMM_SetDefaults (&Ellip, MagneticModel, &Geoid);	/* Set default values and constants */
   /* Check for Geographic Poles */
-  if (!file_exists (argv[1]))
+  if (!file_exists (filename))
     {
       fprintf (stderr, "File %s does not exist\n", argv[1]);
       print_usage (argv[0]);
       exit (EXIT_FAILURE);
     }
-  //WMM_readMagneticModel_Large(argv[1], MagneticModel); //Uncomment this line when using the 740 model, and comment out the  WMM_readMagneticModel line.
-  WMM_readMagneticModel (argv[1], MagneticModel);
+  //WMM_readMagneticModel_Large(filename, MagneticModel); //Uncomment this line when using the 740 model, and comment out the  WMM_readMagneticModel line.
+  WMM_readMagneticModel (filename, MagneticModel);
   WMM_InitializeGeoid (&Geoid);	/* Read the Geoid file */
   epoch = (int) MagneticModel->epoch;	// Set the epoch
   //WMM_GeomagIntroduction (MagneticModel);     /* Print out the WMM introduction */
 
   /*** Get parameters from command line ***/
-  if (!(argc == 6 &&
-	read_pos (argv[2], argv[3], argv[4], &CoordGeodetic, &Geoid) &&
-	read_date (argv[5], &UserDate)))
+  if (!(argc == 5 &&
+	read_pos (argv[1], argv[2], argv[3], &CoordGeodetic, &Geoid) &&
+	read_date (argv[4], &UserDate)))
     {
       print_usage (argv[0]);
       exit (EXIT_FAILURE);
@@ -203,7 +206,7 @@ main (int argc, char *argv[])
   /*** Output ***/
   //WMM_PrintUserData (GeoMagneticElements, CoordGeodetic, UserDate, TimedMagneticModel, &Geoid);       /* Print the results */
   // Print the three Geogmagnetic elements
-  printf ("%-9.1lf %-9.1lf %-9.1lf\n", GeoMagneticElements.X,
+  printf ("%lf %lf %lf\n", GeoMagneticElements.X,
 	  GeoMagneticElements.Y, GeoMagneticElements.Z);
 
   /*** Memory Cleanup ***/
