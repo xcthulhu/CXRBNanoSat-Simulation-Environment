@@ -1,7 +1,9 @@
 import ephem
+import os
+import numpy as np
 from sys import argv
 from os.path import dirname, abspath,sep
-from os import popen
+from string import split
 
 # Source Directory
 src_dir = dirname(abspath(__file__)) + sep
@@ -10,10 +12,11 @@ def degrees(rads):
     "Converts radians to degrees"
     return rads / ephem.pi * 180
 
-def getorb(tlefile,date):
-    "Get the orbital position of CXRBNanoSat at a particular date, given a TLE file describing the orbit"
+def getcxrb(tlefile,date):
+    "Get the a pyephem object representing the CXRBNanoSat at a particular date, given a TLE file describing the orbit"
     f = open(tlefile,'r')
     tle = f.readlines()
+    f.close()
     cxrb = ephem.readtle(tle[0],tle[1],tle[2])
     cxrb.compute(date)
     return cxrb
@@ -22,17 +25,25 @@ def jd2gdy(julian_date):
     "Converts a Julian date to a Gregorian Decimal Year"
     return (julian_date - ephem.julian_date('2000/1/1')) / 365.25 + 2000
 
+def getmagfield(lon,lat,alt,date):
+    """Return a numpy array containing the geomagnetic field vector at a particular longitude, latitude, altitude and date.
+  - Longitude and latitude must be in signed degrees, 
+  - Altitude must be in kilometers from average sea level
+  - Date must be in Gregorian decimal years"""
+    oldpwd = os.getcwd()
+    os.chdir(src_dir + sep + "WMM")
+    cmd = " ".join(map(format, ["./wmm", lon, lat, alt, date]))
+    wmm = os.popen(cmd)
+    magfield = np.array(map(float,split(wmm.read(),' ')))
+    wmm.close()
+    os.chdir(oldpwd)
+    return magfield
+
+# Main routine if we are called as a script
 if __name__ == "__main__":
     date = argv[1]
-    cxrb = getorb(src_dir + "/cxrb.tle", date)
-    cmd = " ".join(map(format,
-                       [src_dir + "/WMM/wmm", 
-                        src_dir + "/WMM/WMM.COF", 
-                        degrees(cxrb.sublong), 
-                        degrees(cxrb.sublat), 
-                        cxrb.elevation/1000 , 
-                        jd2gdy(ephem.julian_date(date))
-                        ]))
-    #print cmd
-    print popen(cmd).readlines()
-    
+    cxrb = getcxrb(src_dir + sep + "cxrb.tle", date)
+    print getmagfield(degrees(cxrb.sublong), 
+                      degrees(cxrb.sublat), 
+                      cxrb.elevation/1000, 
+                      jd2gdy(ephem.julian_date(date)))
