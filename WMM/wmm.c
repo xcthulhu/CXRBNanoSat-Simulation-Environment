@@ -5,11 +5,13 @@
 #include <math.h>
 #include <stdlib.h>
 #include <sys/stat.h>
+#include <sys/types.h>
+#include <regex.h>
 #include "WMMHeader.h"
 
 //---------------------------------------------------------------------------
 
-/* WMM sublibrary is used to make a command prompt program. The program reads location data from command line, performs computations and returns. The program expects the files WMM_SubLibrary.c, WMMHEADER.H,
+/* WMM sublibrary is used to make a command prompt program. The program reads location data from command line, performs computations and returns. The program expects the files libwmm.c, WMMHEADER.H,
 WMM.COF and EGM9615.BIN to be in the same directory. 
 
 Manoj.C.Nair
@@ -28,16 +30,18 @@ Nov 23, 2009
 
 */
 
+// Checks if a file exists
 int
-file_exists (char *fileName)
+file_exists (char *filename)
 {
   struct stat buf;
-  return !stat (fileName, &buf);
+  return !stat (filename, &buf);
 }
 
+// Reads in position data in the form of latitude, longitude, and altitude
 int
-readpos (char *latb, char *lonb, char *altb,
-	 WMMtype_CoordGeodetic * CoordGeodetic, WMMtype_Geoid * Geoid)
+read_pos (char *latb, char *lonb, char *altb,
+	  WMMtype_CoordGeodetic * CoordGeodetic, WMMtype_Geoid * Geoid)
 {
   sscanf (latb, "%lf", &CoordGeodetic->phi);
   sscanf (lonb, "%lf", &CoordGeodetic->lambda);
@@ -47,40 +51,90 @@ readpos (char *latb, char *lonb, char *altb,
   return 1;
 }
 
+/***** Date reading routines *****/
+
+// Checks if a regular expression matches
 int
-readdate (char *dateb, WMMtype_MagneticModel * MagneticModel,
-	  WMMtype_Date * MagneticDate)
+match (char *str, char *pat)
+{
+  int status;
+  regex_t re;
+  if (regcomp (&re, pat, REG_EXTENDED | REG_NOSUB))
+    return 0;
+  status = regexec (&re, str, (size_t) 0, NULL, 0);
+  regfree (&re);
+  return !status;
+}
+
+// Checks if a string is a Gregorian decimal year (ie, a floating point number)
+int
+is_gdy (char *dateb)
+{
+  return match (dateb, "[-+]?[0-9]*\\.?[0-9]*");
+}
+
+// Checks if a string is of the form "YYYY/MM/DD"
+int
+is_ymd (char *dateb)
+{
+  return match (dateb, "[0-9][0-9][0-9][0-9]/[0-9]?[0-9]/[0-9]?[0-9]");
+}
+
+// The epoch - read from COF file.  We are lazy and make it a global.
+int epoch = 0;
+
+// Prints an error message about the form of the date
+void
+print_date_error ()
+{
+  fprintf (stderr,
+	   "Date must be entered in as YYYY/MM/DD or Gregorian decimal year, and only times after %d/01/01 and before %d/01/01 are supported\n",
+	   (int) epoch, (int) epoch + 5);
+}
+
+// Reads date from Gregorian decimal year
+int
+read_gdy (char *dateb, WMMtype_Date * MagneticDate)
+{
+  sscanf (dateb, "%lf", &MagneticDate->DecimalYear);
+  return (epoch <= MagneticDate->DecimalYear
+	  && MagneticDate->DecimalYear <= epoch + 5);
+}
+
+// Reads date from YYYY/MM/DD
+int
+read_ymd (char *dateb, WMMtype_Date * MagneticDate)
 {
   char Error_Message[255];
   sscanf (dateb, "%d/%d/%d", &MagneticDate->Year, &MagneticDate->Month,
 	  &MagneticDate->Day);
-  if (!(2010 < MagneticDate->Year && MagneticDate->Year < 2015))
-    {
-      fprintf (stderr,
-	       "This software only supports times after 2010/01/01 and before 2015/01/01\n");
-      return 0;
-    }
-  if (!(WMM_DateToYear (MagneticDate, Error_Message)))
+  if (!(epoch <= MagneticDate->Year && MagneticDate->Year <= epoch + 5))
+    return 0;
+  else if (!(WMM_DateToYear (MagneticDate, Error_Message)))
     {
       fprintf (stderr, "%s\n", Error_Message);
-      fprintf (stderr, "Time must be specified in YYYY/MM/DD\n");
       return 0;
     }
-  if (MagneticDate->DecimalYear > MagneticModel->epoch + 5
-      || MagneticDate->DecimalYear < MagneticModel->epoch)
+  else
+    return 1;
+}
+
+// Reads in date data
+int
+read_date (char *dateb, WMMtype_Date * MagneticDate)
+{
+  int status = 0;
+  if (is_ymd (dateb))
+    status = read_ymd (dateb, MagneticDate);
+  else if (is_gdy (dateb))
+    status = read_gdy (dateb, MagneticDate);
+  if (status == 0)
     {
-      switch (WMM_Warnings (4, MagneticDate->DecimalYear, MagneticModel))
-	{
-	case 0:
-	  return 0;
-	case 1:
-	  fprintf (stderr, "Time must be specified in YYYY/MM/DD\n");
-	  return 0;
-	default:
-	  break;
-	}
+      print_date_error ();
+      return 0;
     }
-  return 1;
+  else
+    return 1;
 }
 
 void
@@ -119,22 +173,22 @@ main (int argc, char *argv[])
     WMM_Error (2);
   WMM_SetDefaults (&Ellip, MagneticModel, &Geoid);	/* Set default values and constants */
   /* Check for Geographic Poles */
-  //WMM_readMagneticModel_Large(filename, MagneticModel); //Uncomment this line when using the 740 model, and comment out the  WMM_readMagneticModel line.
   if (!file_exists (argv[1]))
     {
       fprintf (stderr, "File %s does not exist\n", argv[1]);
       print_usage (argv[0]);
       exit (EXIT_FAILURE);
     }
-
+  //WMM_readMagneticModel_Large(argv[1], MagneticModel); //Uncomment this line when using the 740 model, and comment out the  WMM_readMagneticModel line.
   WMM_readMagneticModel (argv[1], MagneticModel);
   WMM_InitializeGeoid (&Geoid);	/* Read the Geoid file */
+  epoch = (int) MagneticModel->epoch;	// Set the epoch
   //WMM_GeomagIntroduction (MagneticModel);     /* Print out the WMM introduction */
 
   /*** Get parameters from command line ***/
   if (!(argc == 6 &&
-	readpos (argv[2], argv[3], argv[4], &CoordGeodetic, &Geoid) &&
-	readdate (argv[5], MagneticModel, &UserDate)))
+	read_pos (argv[2], argv[3], argv[4], &CoordGeodetic, &Geoid) &&
+	read_date (argv[5], &UserDate)))
     {
       print_usage (argv[0]);
       exit (EXIT_FAILURE);
