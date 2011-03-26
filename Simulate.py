@@ -25,17 +25,18 @@ def jd2gdy(julian_date):
     "Converts a Julian date to a Gregorian Decimal Year"
     return (julian_date - ephem.julian_date('2000/1/1')) / 365.25 + 2000
 
-def getmagfield(lon,lat,alt,date):
-    """Return a numpy array containing the geomagnetic field vector at a particular longitude, latitude, altitude and date.
-  - Longitude and latitude must be in signed degrees, 
+def getmagfield(lat,lon,alt,date):
+    """Return a numpy array containing the geomagnetic field vector at a particular latitude, longitude, altitude and date.
+  - Latitude and longitude must be in signed degrees, 
   - Altitude must be in kilometers from average sea level
   - Date must be in Gregorian decimal years"""
     oldpwd = os.getcwd()
     os.chdir(src_dir + sep + "WMM")
-    cmd = " ".join(map(format, ["./wmm", lon, lat, alt, date]))
+    cmd = " ".join(map(format, ["./wmm", lat, lon, alt, date]))
     wmm = os.popen(cmd)
-    magfield = np.array(map(float,split(wmm.read(),' ')))
+    out = split(wmm.read(),' ')
     wmm.close()
+    magfield = np.array(map(float,out))
     os.chdir(oldpwd)
     return magfield
 
@@ -43,7 +44,7 @@ def getmagfield(lon,lat,alt,date):
 if __name__ == "__main__":
     date = argv[1]
     cxrb = getcxrb(src_dir + sep + "cxrb.tle", date)
-    print getmagfield(degrees(cxrb.sublong), 
-                      degrees(cxrb.sublat), 
+    print getmagfield(degrees(cxrb.sublat), 
+                      degrees(cxrb.sublong), 
                       cxrb.elevation/1000, 
                       jd2gdy(ephem.julian_date(date)))
