@@ -43,8 +43,8 @@ int
 read_pos (char *latb, char *lonb, char *altb,
 	  WMMtype_CoordGeodetic * CoordGeodetic, WMMtype_Geoid * Geoid)
 {
-  sscanf (latb, "%lf", &CoordGeodetic->phi);
-  sscanf (lonb, "%lf", &CoordGeodetic->lambda);
+  sscanf (latb, "%lf", &CoordGeodetic->phi); // latitude
+  sscanf (lonb, "%lf", &CoordGeodetic->lambda); // longitude
   Geoid->UseGeoid = 1;
   sscanf (altb, "%lf", &CoordGeodetic->HeightAboveGeoid);
   WMM_ConvertGeoidToEllipsoidHeight (CoordGeodetic, Geoid);
@@ -143,9 +143,9 @@ void
 print_usage (char *progname)
 {
   fprintf (stderr, "\nUsage:\n"
-	   "%s <lattidue> <longitude> <altitude> YYYY/MM/DD\n"
+	   "%s <latitude> <longitude> <altitude> YYYY/MM/DD\n"
 	   // "- WMM.COF is a file containing world magnetic model spherical harmonic coefficients\n"
-	   "- lattitude and longitude are given in (signed) degrees\n"
+	   "- latitude and longitude are given in (signed) degrees\n"
 	   "- altitude is given in kilometers\n"
 	   "\n"
 	   "OUTPUTS: X, Y, and Z components of geomagnetic field vector, seperated by spaces\n"
