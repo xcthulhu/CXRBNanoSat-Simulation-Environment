@@ -1,4 +1,6 @@
 .libs
+*.log
+*.aux
 *.o
 *.pyc
 *.lo
