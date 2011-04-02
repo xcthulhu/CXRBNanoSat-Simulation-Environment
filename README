@@ -1,0 +1,13 @@
+This code assumes a lot of other software installed.
+By directory:
+
+  . (ie, the base directory) - Needs pyephem, numpy
+  archeology - Needs gfortran, pdflatex
+  documentation - Needs pdflatex
+  WMM - needs libtool to compile libraries correctly
+  World - needs PyOpenGl, pygame, matplotlib, and mpl_toolkits.basemap
+          You can get basemap here: http://sourceforge.net/projects/matplotlib/files/matplotlib-toolkits/basemap-1.0.1/
+
+Ubuntu Installation instructions:
+	> sudo apt-get install python-pip libtool gfortran texlive-latex-base python-pygame python-opengl python-numpy python-scipy
+	> sudo pip install matplotlib pyephem
