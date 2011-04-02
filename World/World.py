@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
 from OpenGL.GL import *
 from OpenGL.GLU import *
 import pygame
@@ -16,8 +16,8 @@ screendimfull = [800,640,2]
 surface = surface.main(screendimfull)
 pygame.display.set_caption('ICC World - Ian Mallett 2007') #(set program name)
 Objects.main()
-GL.resize((screendimfull[0], screendimfull[1]))#Resize OpenGL Window
-GL.init()#Init OpenGL
+GL.resize((screendimfull[0], screendimfull[1])) #Resize OpenGL Window
+GL.init() #Init OpenGL
 
 view_distance = 18.0
 view_angle = [0.0, 0.0]
@@ -45,6 +45,7 @@ def draw():
     glCallList(4)
     #FLIP TO SCREEN-----------------------------------
     pygame.display.flip()
+
 def get_input():
     global view_distance, view_angle
     keystate = pygame.key.get_pressed()
@@ -60,6 +61,7 @@ def get_input():
     if keystate[K_KP6]: view_angle[1] -= 1.0*((view_distance-5.0)/13.0)
     if keystate[K_KP8] and view_angle[0] < 90: view_angle[0] += 1.0*((view_distance-5.0)/13.0)
     if keystate[K_KP2] and view_angle[0] > -90: view_angle[0] -= 1.0*((view_distance-5.0)/13.0)
+
 def build_list_of_points():
     f_read = open('PointList.txt', 'r')
     point_data = f_read.readlines()
@@ -80,20 +82,11 @@ def build_list_of_points():
         glCallList(3)
         glPopMatrix()
     glEndList()
+
 def main():
     build_list_of_points()
     while True:
         get_input()
         draw()
+
 if __name__ == "__main__": main()
-
-
-
-
-
-
-
-
-
-
-        
