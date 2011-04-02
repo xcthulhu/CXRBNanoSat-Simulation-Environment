@@ -7,4 +7,3 @@ clean:
 	$(MAKE) -C WMM clean
 	$(MAKE) -C archeology clean
 	$(MAKE) -C documentation clean
-	
