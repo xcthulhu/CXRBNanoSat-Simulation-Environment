@@ -21,13 +21,13 @@ all: ${BINARIES}
 #	${CC} -shared -Wl,-soname,${LIBNAME}.so.1 -o ${LIBNAME}.so ${LIBOBJFILES}
 
 %.la : %.lo
-	libtool --mode=link ${CC} ${CFLAGS} -o $@ $<
+	glibtool --mode=link ${CC} ${CFLAGS} -o $@ $<
 
 %.lo: %.c
-	libtool --mode=compile ${CC} ${CFLAGS} -c -o $@ $<
+	glibtool --mode=compile ${CC} ${CFLAGS} -c -o $@ $<
 
 %.o: %.c
-	libtool --mode=compile ${CC} ${CFLAGS} -c -o $@ $<
+	glibtool --mode=compile ${CC} ${CFLAGS} -c -o $@ $<
 
 #${LIBNAME}.a: ${LIBOBJFILES}
 #	ar rcs ${LIBNAME}.a ${LIBOBJFILES}
@@ -36,10 +36,10 @@ all: ${BINARIES}
 #	${CC} -shared -Wl,-soname,${LIBNAME}.so.1 -o ${LIBNAME}.so ${LIBOBJFILES}
 
 wmm_point: wmm_point.o libwmm.la
-	libtool --mode=link ${CC} -o $@ $< libwmm.la ${LDFLAGS}
+	glibtool --mode=link ${CC} -o $@ $< libwmm.la ${LDFLAGS}
 
 wmm: wmm.o libwmm.la
-	libtool --mode=link ${CC} -o $@ $< libwmm.la ${LDFLAGS}
+	glibtool --mode=link ${CC} -o $@ $< libwmm.la ${LDFLAGS}
 
 clean:
 	rm -fr *.o .libs *.lo *.la *.o *.exe ${BINARIES}
